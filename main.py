@@ -1,8 +1,7 @@
 import json
 import os
 import sys
-from src.browser import get_page_ws_url
-from src.page import select_expert, send_message
+from src.deepseek import ask
 
 
 def main():
@@ -21,9 +20,7 @@ def main():
         print("Ключ 'url' отсутствует в settings.json.")
         sys.exit(1)
 
-    ws_url = get_page_ws_url(url)
-    select_expert(ws_url)
-    response = send_message(ws_url, "Расскажи анекдот")
+    response = ask("Расскажи анекдот", url)
     print(f"Ответ:\n{response}")
 
 
