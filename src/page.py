@@ -68,7 +68,12 @@ def get_last_response(ws, timeout: int = 60) -> str:
                     const msgs = document.querySelectorAll('.ds-message');
                     if (!msgs.length) return null;
                     const lastMsg = msgs[msgs.length - 1];
-                    return lastMsg.textContent.trim();
+                    const text = lastMsg.textContent.trim();
+                    if (!text) return null;
+                    const parent = lastMsg.parentElement;
+                    const loading = parent && parent.querySelector('[class*="loading"], [class*="spinner"]');
+                    if (loading) return null;
+                    return text;
                 })()
             """
         })
