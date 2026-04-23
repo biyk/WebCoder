@@ -22,8 +22,9 @@ def get_cdp_targets():
         return json.load(resp)
 
 
-def send_cdp_command(ws, method, params=None, msg_id=1):
+def send_cdp_command(ws, method, params=None, msg_id=1, timeout=30):
     cmd = {"id": msg_id, "method": method, "params": params or {}}
+    ws.settimeout(timeout)
     ws.send(json.dumps(cmd))
     while True:
         raw = ws.recv()
@@ -33,7 +34,7 @@ def send_cdp_command(ws, method, params=None, msg_id=1):
 
 
 def navigate_to_url(ws_url, url):
-    ws = websocket.create_connection(ws_url, timeout=10)
+    ws = websocket.create_connection(ws_url, timeout=30)
     resp = send_cdp_command(ws, "Page.navigate", {"url": url})
     ws.close()
     return resp
