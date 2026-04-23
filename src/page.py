@@ -66,7 +66,7 @@ def get_last_response(ws_url: str, timeout: int = 60) -> str:
         ws = websocket.create_connection(ws_url, timeout=10)
         result = send_cdp_command(ws, "Runtime.evaluate", {
             "expression": """
-                (function() {
+    (function() {
                     const items = document.querySelector('.ds-virtual-list-items');
                     if (!items) return null;
                     const messages = items.querySelectorAll('.ds-message');
@@ -76,7 +76,7 @@ def get_last_response(ws_url: str, timeout: int = 60) -> str:
                     if (!parent) return null;
                     const flex = Array.from(parent.children).find(c => c.classList.contains('ds-flex'));
                     if (!flex) return null;
-                    const msgEl = lastMsg.querySelector('.ds-markdown') || lastMsg;
+                    const msgEl = Array.from(lastMsg.children).find(c => c.classList.contains('ds-markdown')) || lastMsg;
                     return msgEl.textContent.trim();
                 })()
             """
