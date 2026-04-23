@@ -26,7 +26,8 @@ def main():
         print(f"Brave Beta не найден по пути: {BRAVE_PATH}")
         sys.exit(1)
 
-    select_expert_and_type(url, "Привет мир!")
+    response = select_expert_and_type(url, "Привет мир!")
+    print(f"Ответ:\n{response}")
 
 
 if __name__ == "__main__":

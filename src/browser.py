@@ -68,6 +68,50 @@ def type_text(ws_url: str, selector: str, text: str):
     print(f"Введен текст: {text}")
 
 
+def press_enter_and_verify(ws_url: str, selector: str) -> bool:
+    ws = websocket.create_connection(ws_url, timeout=10)
+    send_cdp_command(ws, "Input.dispatchKeyEvent", {"key": "Enter", "type": "keyDown"})
+    send_cdp_command(ws, "Input.dispatchKeyEvent", {"key": "Enter", "type": "keyUp"})
+    ws.close()
+    time.sleep(1)
+    ws = websocket.create_connection(ws_url, timeout=10)
+    result = send_cdp_command(ws, "Runtime.evaluate", {
+        "expression": f"document.querySelector('{selector}').value"
+    })
+    ws.close()
+    remaining = result.get("result", {}).get("result", {}).get("value", "")
+    return remaining == ""
+
+
+def get_last_response(ws_url: str, timeout=60) -> str:
+    start = time.time()
+    while time.time() - start < timeout:
+        ws = websocket.create_connection(ws_url, timeout=10)
+        result = send_cdp_command(ws, "Runtime.evaluate", {
+            "expression": """
+                (function() {
+                    const items = document.querySelector('.ds-virtual-list-items');
+                    if (!items) return null;
+                    const messages = items.querySelectorAll('.ds-message');
+                    if (!messages.length) return null;
+                    const lastMsg = messages[messages.length - 1];
+                    const parent = lastMsg.parentElement;
+                    if (!parent) return null;
+                    const flex = Array.from(parent.children).find(c => c.classList.contains('ds-flex'));
+                    if (!flex) return null;
+                    const msgEl = lastMsg.querySelector('.ds-message') || lastMsg;
+                    return msgEl.textContent.trim();
+                })()
+            """
+        })
+        ws.close()
+        text = result.get("result", {}).get("result", {}).get("value")
+        if text:
+            return text
+        time.sleep(2)
+    return ""
+
+
 def wait_for_element(ws_url, selector, timeout=10):
     start = time.time()
     while time.time() - start < timeout:
@@ -121,10 +165,13 @@ def get_page_ws_url(url: str) -> str:
     return existing["webSocketDebuggerUrl"]
 
 
-def select_expert_and_type(url: str, text: str):
+def select_expert_and_type(url: str, text: str) -> str:
     ws_url = get_page_ws_url(url)
     select_expert(ws_url)
     type_text(ws_url, 'textarea', text)
+    sent = press_enter_and_verify(ws_url, 'textarea')
+    print(f"Текст отправлен: {sent}")
+    return get_last_response(ws_url)
 
 
 def ensure_browser_running():
