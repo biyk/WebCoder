@@ -64,16 +64,18 @@ def get_last_response(ws, timeout: int = 60) -> str:
         iteration += 1
         result = send_cdp_command(ws, "Runtime.evaluate", {
             "expression": """
-    (function() {
-                    const msgs = document.querySelectorAll('.ds-message');
-                    if (!msgs.length) return null;
-                    const lastMsg = msgs[msgs.length - 1];
-                    const text = lastMsg.textContent.trim();
-                    if (!text) return null;
+                (function() {
+                   const items = document.querySelector('.ds-virtual-list-items');
+                    if (!items) return null;
+                    const messages = items.querySelectorAll('.ds-message');
+                    if (!messages.length) return null;
+                    const lastMsg = messages[messages.length - 1];
                     const parent = lastMsg.parentElement;
-                    const loading = parent && parent.querySelector('[class*="loading"], [class*="spinner"]');
-                    if (loading) return null;
-                    return text;
+                    if (!parent) return null;
+                    const flex = Array.from(parent.children).find(c => c.classList.contains('ds-flex'));
+                    if (!flex) return null;
+                    const msgEl = Array.from(lastMsg.children).find(c => c.classList.contains('ds-markdown')) || lastMsg;
+                    return msgEl.textContent.trim();
                 })()
             """
         })
