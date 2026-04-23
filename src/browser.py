@@ -96,27 +96,29 @@ def get_page_ws_url(url: str) -> str:
     ensure_browser_running()
 
     targets = get_cdp_targets()
-    page_target = next((t for t in targets if t.get("type") == "page"), None)
+    page_targets = [t for t in targets if t.get("type") == "page"]
 
-    current_url = page_target.get("url", "") if page_target else ""
-    should_navigate = not current_url or url not in current_url
+    existing = next((t for t in page_targets if url in t.get("url", "")), None)
 
-    if should_navigate:
-        if page_target is None:
-            browser_target = next((t for t in targets if t.get("type") == "browser"), targets[0])
-            ws = websocket.create_connection(browser_target["webSocketDebuggerUrl"], timeout=10)
-            send_cdp_command(ws, "Target.createTarget", {"url": url})
-            ws.close()
-        else:
-            ws_url = page_target["webSocketDebuggerUrl"]
-            navigate_to_url(ws_url, url)
+    if existing:
+        print(f"Вкладка уже открыта: {existing.get('url', '')}")
+        ws_url = existing["webSocketDebuggerUrl"]
+    elif page_targets:
+        ws_url = page_targets[0]["webSocketDebuggerUrl"]
+        navigate_to_url(ws_url, url)
         targets = get_cdp_targets()
-        page_target = next((t for t in targets if t.get("type") == "page" and url in t.get("url", "")), None)
+        existing = next((t for t in targets if t.get("type") == "page" and url in t.get("url", "")), None)
         print(f"Открыто: {url}")
     else:
-        print(f"Вкладка уже открыта: {current_url}")
+        browser_target = next((t for t in targets if t.get("type") == "browser"), targets[0])
+        ws = websocket.create_connection(browser_target["webSocketDebuggerUrl"], timeout=10)
+        send_cdp_command(ws, "Target.createTarget", {"url": url})
+        ws.close()
+        targets = get_cdp_targets()
+        existing = next((t for t in targets if t.get("type") == "page" and url in t.get("url", "")), None)
+        print(f"Создана новая вкладка: {url}")
 
-    return page_target["webSocketDebuggerUrl"]
+    return existing["webSocketDebuggerUrl"]
 
 
 def select_expert_and_type(url: str, text: str):
