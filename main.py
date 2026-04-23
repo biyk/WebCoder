@@ -1,9 +1,8 @@
 import json
 import os
 import sys
-from src.browser import select_expert_and_type
-
-BRAVE_PATH = r"C:\Program Files\BraveSoftware\Brave-Browser-Beta\Application\brave.exe"
+from src.browser import get_page_ws_url
+from src.page import select_expert, send_message
 
 
 def main():
@@ -22,11 +21,9 @@ def main():
         print("Ключ 'url' отсутствует в settings.json.")
         sys.exit(1)
 
-    if not os.path.exists(BRAVE_PATH):
-        print(f"Brave Beta не найден по пути: {BRAVE_PATH}")
-        sys.exit(1)
-
-    response = select_expert_and_type(url, "Привет мир!")
+    ws_url = get_page_ws_url(url)
+    select_expert(ws_url)
+    response = send_message(ws_url, "Расскажи анекдот")
     print(f"Ответ:\n{response}")
 
 
