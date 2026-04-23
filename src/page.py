@@ -46,7 +46,7 @@ def press_enter_and_verify(ws, selector: str) -> bool:
     send_cdp_command(ws, "Input.dispatchKeyEvent", {"key": "Enter", "type": "keyDown"})
     send_cdp_command(ws, "Input.dispatchKeyEvent", {"key": "Enter", "type": "keyUp"})
     start("enter_verify_pause")
-    time.sleep(1)
+    time.sleep(0.2)
     stop("enter_verify_pause")
     result = send_cdp_command(ws, "Runtime.evaluate", {
         "expression": f"document.querySelector('{selector}').value"
@@ -84,7 +84,7 @@ def get_last_response(ws, timeout: int = 60) -> str:
             lap("get_response_polling", f"iter={iteration} got {len(text)} chars")
             stop("get_response_polling")
             return text
-        time.sleep(2)
+        time.sleep(1)
     lap("get_response_polling", "timeout")
     stop("get_response_polling")
     return ""

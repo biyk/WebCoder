@@ -47,34 +47,39 @@ def navigate_to_url(ws_url, url):
 
 def get_page_ws_url(url: str) -> str:
     """Получает WebSocket URL для страницы. Запускает браузер если нужно."""
+    start("ensure_browser")
     ensure_browser_running()
-
-    # Получаем список всех CDP targets
+    stop("ensure_browser")
+    
+    start("get_cdp_targets")
     targets = get_cdp_targets()
+    lap("get_cdp_targets")
     page_targets = [t for t in targets if t.get("type") == "page"]
-
-    # Ищем существующую вкладку с нужным URL
+    
+    start("find_url")
     existing = next((t for t in page_targets if url in t.get("url", "")), None)
-
+    lap("find_url")
+    
     if existing:
-        # Нашли существующую вкладку - используем её
         ws_url = existing["webSocketDebuggerUrl"]
     elif page_targets:
-        # Нет вкладки с URL, но есть другие страницы - открываем в первой
         ws_url = page_targets[0]["webSocketDebuggerUrl"]
+        start("navigate")
         navigate_to_url(ws_url, url)
+        lap("navigate")
         targets = get_cdp_targets()
         existing = next((t for t in targets if t.get("type") == "page" and url in t.get("url", "")), None)
+        ws_url = existing["webSocketDebuggerUrl"]
     else:
-        # Нет ни одной страницы - создаём новую вкладку
         browser_target = next((t for t in targets if t.get("type") == "browser"), targets[0])
         ws = websocket.create_connection(browser_target["webSocketDebuggerUrl"], timeout=10)
         send_cdp_command(ws, "Target.createTarget", {"url": url})
         ws.close()
         targets = get_cdp_targets()
         existing = next((t for t in targets if t.get("type") == "page" and url in t.get("url", "")), None)
+        ws_url = existing["webSocketDebuggerUrl"]
 
-    return existing["webSocketDebuggerUrl"]
+    return ws_url
 
 
 def ensure_browser_running():
@@ -105,13 +110,6 @@ def ensure_browser_running():
                 sys.exit(1)
             stop("wait_port_open")
 
-            # Фиксированная пауза после запуска браузера
-            start("browser_warmup")
-            time.sleep(3)
-            lap("browser_warmup")
-            time.sleep(2)
-            lap("browser_warmup")
-            stop("browser_warmup")
             print("Браузер запущен.")
 
 
