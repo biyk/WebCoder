@@ -1,3 +1,4 @@
+import websocket
 from dotenv import load_dotenv
 import os
 from src.browser import get_page_ws_url
@@ -14,8 +15,12 @@ def ask(text: str) -> str:
     reset()
     with measure("ask"):
         ws_url = get_page_ws_url(DEEPSEEK_URL)
-        if USE_EXPERT:
-            with measure("select_expert"):
-                select_expert(ws_url)
-        response = send_message(ws_url, text)
+        ws = websocket.create_connection(ws_url, timeout=30)
+        try:
+            if USE_EXPERT:
+                with measure("select_expert"):
+                    select_expert(ws)
+            response = send_message(ws, text)
+        finally:
+            ws.close()
     return response
