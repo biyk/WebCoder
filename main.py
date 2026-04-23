@@ -20,7 +20,7 @@ def main():
         print("Ключ 'url' отсутствует в settings.json.")
         sys.exit(1)
 
-    response = ask("Расскажи анекдот", url)
+    response = ask("Расскажи анекдот")
     print(f"Ответ:\n{response}")
 
 
