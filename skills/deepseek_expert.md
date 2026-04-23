@@ -1,20 +1,18 @@
 # deepseek_expert
 
-When you encounter any situation where you are uncertain, need clarification, or want to verify something - ask the deepseek expert instead of guessing.
+When you need clarification or want to verify information - ask the DeepSeek expert instead of guessing.
 
 ## Usage
 
-Trigger: Any time you need to ask a question to save tokens or verify information
-
+### From Python
 ```python
 from src.deepseek import ask
+response = ask("your question")
 ```
 
-Ask anything: coding questions, verification, clarification.
-
-Example:
-```python
-ask("what does this function do?")
+### From CLI
+```bash
+python ask.py "your question here"
 ```
 
-Return the response to the user.
+Both return the response from DeepSeek.
