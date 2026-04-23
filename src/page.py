@@ -76,7 +76,7 @@ def get_last_response(ws_url: str, timeout: int = 60) -> str:
                     if (!parent) return null;
                     const flex = Array.from(parent.children).find(c => c.classList.contains('ds-flex'));
                     if (!flex) return null;
-                    const msgEl = lastMsg.querySelector('.ds-message') || lastMsg;
+                    const msgEl = lastMsg.querySelector('.ds-markdown') || lastMsg;
                     return msgEl.textContent.trim();
                 })()
             """
