@@ -1,39 +1,38 @@
 # AGENTS.md
 
-## Running the project
+## Running
 
 ```bash
 set PYTHONIOENCODING=utf-8 && C:\Users\Name\AppData\Local\Programs\Python\Python310\python.exe main.py
 ```
 
-- `PYTHONIOENCODING=utf-8` is required for Russian text output
-- Full path to Python is required (not just `python`)
+CLI: `python ask.py "question"`
 
 ## Dependencies
 
-- `websocket-client` (install via `pip install websocket-client`)
+- `websocket-client`
 
-## Key files
+## Architecture
 
-- `main.py` - entry point
-- `src/browser.py` - CDP automation functions
-- `settings.json` - URL configuration with key `url`
+- `main.py` / `ask.py` - entry points
+- `src/deepseek.py` - public API: `ask(text)` returns response
+- `src/browser.py` - CDP: port check, target discovery, browser launch
+- `src/page.py` - page interaction: click, type, wait, select expert, send message
+- `settings.json` - URL config
 
-## CDP quirks (hard-learned)
+## CDP quirks
 
-1. CDP responses have double nesting: `result.result.value`, not `result.value`
-2. Always use a loop in `send_cdp_command` to filter by `id` - events arrive before responses
-3. To input text in textarea, use `Input.insertText` CDP command (not JavaScript value assignment)
-4. Browser must be started with `--remote-debugging-port=9222` and `--user-data-dir=profile`
+1. Responses: `result.result.value` (double nesting)
+2. Loop in `send_cdp_command` to filter by `id`
+3. Textarea: `Input.insertText` + `focus()` (not JS value)
+4. Browser: `--remote-debugging-port=9222` + `--user-data-dir=profile`
 
-## Git workflow
+## DeepSeek response extraction
 
-Commands must be run separately (no `&&` in PowerShell):
-```bash
-git add -A
-git commit -m "message"
-```
+- Find last `.ds-message` in `.ds-virtual-list-items`
+- Check parent for `.ds-flex` sibling (completion flag)
+- Get text from `.ds-message` child element
 
-## Testing
+## Skills
 
-Run `main.py` - it loads URL from `settings.json` and executes the full automation flow.
+`.opencode/skills/deepseek_expert/SKILL.md` - ask questions to save tokens
