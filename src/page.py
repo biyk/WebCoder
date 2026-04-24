@@ -75,7 +75,7 @@ def get_last_response(ws, timeout: int = 60) -> str:
                     const flex = Array.from(parent.children).find(c => c.classList.contains('ds-flex'));
                     if (!flex) return null;
                     const msgEl = Array.from(lastMsg.children).find(c => c.classList.contains('ds-markdown')) || lastMsg;
-                    return msgEl.textContent.trim();
+                    return msgEl.innerText.trim();
                 })()
             """
         })
