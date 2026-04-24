@@ -19,3 +19,7 @@ set PYTHONIOENCODING=utf-8 && C:\Users\Name\AppData\Local\Programs\Python\Python
 - Python 3.10+
 - Brave Browser Beta (путь в коде: `C:\Program Files\BraveSoftware\Brave-Browser-Beta\Application\brave.exe`)
 - Файл `settings.json` с ключом `url`
+
+
+
+ pm2 start mcp_deepseek_server.py --interpreter .\venv\Scripts\python.exe --name deepseek-mcp
