@@ -25,7 +25,7 @@ set PYTHONIOENCODING=utf-8 && C:\Users\Name\AppData\Local\Programs\Python\Python
 Запуск сервера на порту 9999:
 
 ```bash
-set PYTHONIOENCODING=utf-8 && python server.py
+ set PYTHONIOENCODING=utf-8; python server.py
 ```
 
 ### Запрос из консоли браузера
