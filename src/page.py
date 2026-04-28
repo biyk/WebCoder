@@ -32,6 +32,7 @@ def wait_for_element(ws, selector: str, timeout: int = 10) -> bool:
 
 
 def set_textarea(ws, selector: str, text: str):
+    send_cdp_command(ws, "Runtime.evaluate", {"expression": f"document.querySelector('{selector}').value = ''"})
     send_cdp_command(ws, "Runtime.evaluate", {"expression": f"document.querySelector('{selector}').focus()"})
     send_cdp_command(ws, "Input.insertText", {"text": text})
 
