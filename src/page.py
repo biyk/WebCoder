@@ -33,8 +33,11 @@ def wait_for_element(ws, selector: str, timeout: int = 10) -> bool:
 
 def set_textarea(ws, selector: str, text: str):
     send_cdp_command(ws, "Runtime.evaluate", {"expression": f"document.querySelector('{selector}').value = ''"})
+    time.sleep(0.5)
     send_cdp_command(ws, "Runtime.evaluate", {"expression": f"document.querySelector('{selector}').focus()"})
+    time.sleep(0.5)
     send_cdp_command(ws, "Input.insertText", {"text": text})
+
 
 
 def type_text(ws, selector: str, text: str):
@@ -57,7 +60,7 @@ def press_enter_and_verify(ws, selector: str) -> bool:
     return remaining == ""
 
 
-def get_last_response(ws, timeout: int = 60) -> str:
+def get_last_response(ws, timeout: int = 300) -> str:
     start("get_response_polling")
     start_time = time.time()
     iteration = 0
