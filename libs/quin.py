@@ -5,14 +5,14 @@ import heapq
 from typing import List, Dict, Tuple
 
 class SimplePathfinder:
-    """Только ортогональные шаги (4 направления)."""
+    """Ортогональные шаги (4 направления) + расчёт видимости."""
 
     def __init__(self, scene_data: dict):
         self.gs = scene_data["scene"]["gridSize"]
         self.cols = scene_data["scene"]["width"] // self.gs
         self.rows = scene_data["scene"]["height"] // self.gs
 
-        # только стены, мешающие движению
+        # Только стены, мешающие движению
         self.walls = []
         for w in scene_data["walls"]:
             if w.get("move", 0) > 0:
@@ -21,7 +21,7 @@ class SimplePathfinder:
                     (w["points"]["B"]["x"], w["points"]["B"]["y"])
                 ))
 
-        # NPC: id → (row, col) и их прямоугольники
+        # NPC: id → (row, col) и прямоугольники
         self.npc_map: Dict[str, Tuple[int, int]] = {}
         self.npc_rects: Dict[str, Tuple[float,float,float,float]] = {}
         for npc in scene_data["npcs"]:
@@ -32,13 +32,10 @@ class SimplePathfinder:
                 npc["x"], npc["y"], npc["width"], npc["height"]
             )
 
-        # 4 направления
         self.dirs = [(-1,0), (1,0), (0,-1), (0,1)]
         self.dir_names = {
-            (-1,0): "up",
-            (1,0): "down",
-            (0,-1): "left",
-            (0,1): "right"
+            (-1,0): "up", (1,0): "down",
+            (0,-1): "left", (0,1): "right"
         }
 
     # -----------------------------------------------------------------
@@ -80,16 +77,12 @@ class SimplePathfinder:
 
     # -----------------------------------------------------------------
     def _cell_valid(self, r, c, ignore_npc_id: str = None) -> bool:
-        """Клетка свободна для занятия (без учёта лучей)."""
         x, y, w, h = self._cell_rect(r, c)
-        # границы
         if x < 0 or y < 0 or x + w > self.cols * self.gs or y + h > self.rows * self.gs:
             return False
-        # стены
         for seg in self.walls:
             if self._segment_rect_intersect(seg[0][0], seg[0][1], seg[1][0], seg[1][1], x, y, w, h):
                 return False
-        # другие NPC
         for nid, (rx, ry, rw, rh) in self.npc_rects.items():
             if nid == ignore_npc_id:
                 continue
@@ -98,14 +91,11 @@ class SimplePathfinder:
         return True
 
     def _edge_valid(self, r1, c1, r2, c2, ignore_npc_id: str = None) -> bool:
-        """Переход центра из клетки в клетку (отрезок не пересекает стены и NPC)."""
         p1 = self._center(r1, c1)
         p2 = self._center(r2, c2)
-        # стены
         for seg in self.walls:
             if self._segment_intersect(p1, p2, seg[0], seg[1]):
                 return False
-        # NPC
         for nid, (rx, ry, rw, rh) in self.npc_rects.items():
             if nid == ignore_npc_id:
                 continue
@@ -128,9 +118,8 @@ class SimplePathfinder:
         start = self.npc_map[src_id]
         end   = self.npc_map[tgt_id]
 
-        # стартовая клетка должна быть свободна (игнорируем самого себя)
-        if not self._cell_valid(start[0], start[1], ignore_npc_id=src_id):
-            return []
+        # Стартовая точка всегда считается валидной – проверку убрали
+        # (раньше здесь было: if not self._cell_valid(start[0], start[1], ignore_npc_id=src_id): return [])
 
         open_set = [(0.0, 0.0, start)]
         came_from: Dict[Tuple[int,int], Tuple[int,int]] = {}
@@ -142,9 +131,8 @@ class SimplePathfinder:
                 continue
 
             if mode == "direct" and (cr, cc) == end:
-                if self._cell_valid(cr, cc, ignore_npc_id=tgt_id):
-                    return self._reconstruct(came_from, (cr, cc))
-                continue
+                # Конечная клетка всегда валидна – сразу возвращаем путь
+                return self._reconstruct(came_from, (cr, cc))
             if mode == "los" and self._has_los(cr, cc, end[0], end[1]):
                 return self._reconstruct(came_from, (cr, cc))
 
@@ -153,22 +141,22 @@ class SimplePathfinder:
                 if not (0 <= nr < self.rows and 0 <= nc < self.cols):
                     continue
 
-                # конечная клетка
-                ign_cell = tgt_id if (nr, nc) == end else None
-                if not self._cell_valid(nr, nc, ign_cell):
-                    continue
+                # Клетка цели считается всегда проходимой
+                if (nr, nc) != end:
+                    ign_cell = tgt_id if (nr, nc) == end else None
+                    if not self._cell_valid(nr, nc, ign_cell):
+                        continue
 
-                # ребро перехода
+                # Проверка ребра (стены и NPC, кроме начального/конечного игнорируемого)
                 ign_edge = src_id if (cr, cc) == start else (tgt_id if (nr, nc) == end else None)
                 if not self._edge_valid(cr, cc, nr, nc, ign_edge):
                     continue
 
-                cost = 1.0   # все шаги равны
+                cost = 1.0
                 tent_g = g + cost
                 if tent_g < g_score.get((nr, nc), math.inf):
                     came_from[(nr, nc)] = (cr, cc)
                     g_score[(nr, nc)] = tent_g
-                    # Манхэттенская эвристика (без диагоналей)
                     h = abs(nr - end[0]) + abs(nc - end[1])
                     heapq.heappush(open_set, (tent_g + h, tent_g, (nr, nc)))
 
@@ -187,12 +175,21 @@ class SimplePathfinder:
                 for i in range(len(path)-1)]
 
 
-def find_path_from_data(request: dict) -> List[str]:
+def find_path_from_data(request: dict) -> dict:
+    """
+    Принимает JSON с полями src, token, data.
+    Возвращает словарь с двумя ключами:
+      - "direct": список направлений до клетки цели
+      - "los":    список направлений до клетки с прямой видимостью
+    """
     src_id = request.get("src")
     tgt_id = request.get("token")
     scene_data = request.get("data")
-    mode = request.get("mode", "direct")
+
     if not src_id or not tgt_id or not scene_data:
-        raise ValueError("Missing required fields")
+        raise ValueError("Missing required fields: src, token, or data")
+
     pf = SimplePathfinder(scene_data)
-    return pf.find_path(src_id, tgt_id, mode)
+    direct_path = pf.find_path(src_id, tgt_id, mode="direct")
+    los_path    = pf.find_path(src_id, tgt_id, mode="los")
+    return {"direct": direct_path, "los": los_path}

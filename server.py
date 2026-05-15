@@ -33,7 +33,7 @@ def path_endpoint():
         return jsonify({"error": "Missing JSON body"}), 400
     try:
         path = find_path_from_data(data)
-        return jsonify({"path": path}), 200, {"Content-Type": "application/json; charset=utf-8"}
+        return jsonify(path), 200, {"Content-Type": "application/json; charset=utf-8"}
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
     except Exception as e:
